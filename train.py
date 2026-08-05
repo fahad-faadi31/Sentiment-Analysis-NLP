@@ -7,11 +7,10 @@ from models.lstm import SentimentLSTM
 # Training configuration
 BATCH_SIZE=64
 EPOCHS=5
-LEARNING_RATE=0.001
+LEARNING_RATE=0.0005
 MAX_LENGTH=200
 EMBEDDING_DIM=128
 HIDDEN_DIM=128
-NUM_LAYERS=2
 DROPOUT=0.3
 # Select device
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -23,7 +22,7 @@ test_dataset=IMDBDataset(dataset["test"],vocab,MAX_LENGTH)
 train_loader=DataLoader(train_dataset,batch_size=BATCH_SIZE,shuffle=True)
 test_loader=DataLoader(test_dataset,batch_size=BATCH_SIZE)
 # Initialize model
-model=SentimentLSTM(len(vocab),EMBEDDING_DIM,HIDDEN_DIM,NUM_LAYERS,DROPOUT).to(device)
+model=SentimentLSTM(len(vocab),EMBEDDING_DIM,HIDDEN_DIM,DROPOUT).to(device)
 criterion=nn.BCEWithLogitsLoss()
 optimizer=Adam(model.parameters(),lr=LEARNING_RATE)
 best_accuracy=0
@@ -39,6 +38,7 @@ for epoch in range(EPOCHS):
         outputs=model(texts)
         loss=criterion(outputs,labels)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(),1.0)
         optimizer.step()
         total_loss+=loss.item()
         predictions=(torch.sigmoid(outputs)>=0.5).float()
