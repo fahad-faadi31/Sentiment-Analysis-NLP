@@ -29,6 +29,9 @@ class IMDBDataset(Dataset):
 def load_imdb_dataset():
     dataset=load_dataset("stanfordnlp/imdb")
     dataset=dataset.map(lambda x:{"text":clean_text(x["text"])})
+    train_validation=dataset["train"].train_test_split(test_size=0.2,seed=42)
+    dataset["train"]=train_validation["train"]
+    dataset["validation"]=train_validation["test"]
     return dataset
 # Create vocabulary
 def build_vocab(dataset):
@@ -39,10 +42,15 @@ if __name__=="__main__":
     dataset=load_imdb_dataset()
     vocab=build_vocab(dataset)
     train_dataset=IMDBDataset(dataset["train"],vocab)
+    validation_dataset=IMDBDataset(dataset["validation"],vocab)
     test_dataset=IMDBDataset(dataset["test"],vocab)
     train_loader=DataLoader(train_dataset,batch_size=64,shuffle=True)
+    validation_loader=DataLoader(validation_dataset,batch_size=64)
     test_loader=DataLoader(test_dataset,batch_size=64)
     texts,labels=next(iter(train_loader))
     print("Vocabulary Size:",len(vocab))
+    print("Train Size:",len(train_dataset))
+    print("Validation Size:",len(validation_dataset))
+    print("Test Size:",len(test_dataset))
     print("Input Shape:",texts.shape)
     print("Label Shape:",labels.shape)
