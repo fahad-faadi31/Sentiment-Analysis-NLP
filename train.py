@@ -1,3 +1,6 @@
+import os
+import zipfile
+import urllib.request
 import torch
 import torch.nn as nn
 from torch.optim import Adam
@@ -9,21 +12,39 @@ BATCH_SIZE=64
 EPOCHS=10
 LEARNING_RATE=0.0005
 MAX_LENGTH=200
-EMBEDDING_DIM=128
+EMBEDDING_DIM=100
 HIDDEN_DIM=128
 DROPOUT=0.3
 PATIENCE=2
 # Select device
 device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Download GloVe embeddings
+glove_path="glove.6B.100d.txt"
+if not os.path.exists(glove_path):
+    zip_path="glove.6B.zip"
+    urllib.request.urlretrieve("https://nlp.stanford.edu/data/glove.6B.zip",zip_path)
+    with zipfile.ZipFile(zip_path,"r") as zip_ref:
+        zip_ref.extractall(".")
 # Load data
 dataset=load_imdb_dataset()
 vocab=build_vocab(dataset)
+# Create GloVe embedding matrix
+embedding_weights=torch.randn(len(vocab),EMBEDDING_DIM)*0.05
+embedding_weights[vocab.word_to_index[vocab.pad_token]]=torch.zeros(EMBEDDING_DIM)
+with open(glove_path,"r",encoding="utf-8") as file:
+    for line in file:
+        values=line.split()
+        word=values[0]
+        if word in vocab.word_to_index:
+            vector=torch.tensor([float(value) for value in values[1:]],dtype=torch.float)
+            embedding_weights[vocab.word_to_index[word]]=vector
+# Create datasets
 train_dataset=IMDBDataset(dataset["train"],vocab,MAX_LENGTH)
 validation_dataset=IMDBDataset(dataset["validation"],vocab,MAX_LENGTH)
 train_loader=DataLoader(train_dataset,batch_size=BATCH_SIZE,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=BATCH_SIZE)
 # Initialize model
-model=SentimentLSTM(len(vocab),EMBEDDING_DIM,HIDDEN_DIM,DROPOUT).to(device)
+model=SentimentLSTM(len(vocab),EMBEDDING_DIM,HIDDEN_DIM,DROPOUT,embedding_weights).to(device)
 criterion=nn.BCEWithLogitsLoss()
 optimizer=Adam(model.parameters(),lr=LEARNING_RATE)
 best_accuracy=0
