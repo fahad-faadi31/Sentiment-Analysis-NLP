@@ -5,7 +5,7 @@ from models.lstm import SentimentLSTM
 # Evaluation configuration
 BATCH_SIZE=64
 MAX_LENGTH=200
-EMBEDDING_DIM=128
+EMBEDDING_DIM=100
 HIDDEN_DIM=128
 DROPOUT=0.3
 # Select device
