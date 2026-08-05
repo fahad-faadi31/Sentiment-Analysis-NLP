@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from models.lstm import SentimentLSTM
 # Training configuration
 BATCH_SIZE=64
-EPOCHS=5
+EPOCHS=10
 LEARNING_RATE=0.0005
 MAX_LENGTH=200
 EMBEDDING_DIM=128
